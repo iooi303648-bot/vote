@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>공모전 투표</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Apple SD Gothic Neo',sans-serif;background:#f0f4f8;min-height:100vh;display:flex;flex-direction:column}
+header{background:#2c5f8a;color:white;padding:28px 20px;text-align:center}
+header h1{font-size:22px;font-weight:600;margin-bottom:6px}
+header p{font-size:14px;opacity:.85}
+main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px}
+.subtitle{font-size:14px;color:#666;margin-bottom:24px;text-align:center}
+.grade-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%;max-width:480px}
+.grade-btn{background:white;border:2px solid #e0e8f0;border-radius:14px;padding:28px 10px;text-align:center;cursor:pointer;text-decoration:none;color:#2c5f8a;transition:all .18s}
+.grade-btn:hover{border-color:#2c5f8a;background:#eef4fb;transform:translateY(-3px);box-shadow:0 4px 12px rgba(44,95,138,.15)}
+.grade-btn .num{font-size:32px;font-weight:700;display:block;margin-bottom:4px}
+.grade-btn .label{font-size:13px;color:#888}
+.admin-link{margin-top:32px}
+.admin-link a{font-size:13px;color:#aaa;text-decoration:none;border-bottom:1px solid #ddd;padding-bottom:2px}
+.admin-link a:hover{color:#2c5f8a}
+footer{text-align:center;padding:16px;font-size:12px;color:#bbb}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏆 공모전 투표</h1>
+  <p>출품작을 보고 가장 마음에 드는 작품에 투표해주세요</p>
+</header>
+<main>
+  <p class="subtitle">투표할 학년을 선택해주세요</p>
+  <div class="grade-grid">
+    <a class="grade-btn" href="vote.html?grade=1">
+      <span class="num">1</span>
+      <span class="label">학년</span>
+    </a>
+    <a class="grade-btn" href="vote.html?grade=2">
+      <span class="num">2</span>
+      <span class="label">학년</span>
+    </a>
+    <a class="grade-btn" href="vote.html?grade=3">
+      <span class="num">3</span>
+      <span class="label">학년</span>
+    </a>
+    <a class="grade-btn" href="vote.html?grade=4">
+      <span class="num">4</span>
+      <span class="label">학년</span>
+    </a>
+    <a class="grade-btn" href="vote.html?grade=5">
+      <span class="num">5</span>
+      <span class="label">학년</span>
+    </a>
+    <a class="grade-btn" href="vote.html?grade=6">
+      <span class="num">6</span>
+      <span class="label">학년</span>
+    </a>
+  </div>
+  <div class="admin-link"><a href="admin.html">관리자 페이지</a></div>
+</main>
+<footer>동일중앙초등학교 공모전</footer>
+</body>
+</html>
