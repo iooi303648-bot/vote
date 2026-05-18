@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>공모전 투표</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Apple SD Gothic Neo',sans-serif;background:#f0f4f8;min-height:100vh}
+header{background:#2c5f8a;color:white;padding:16px 20px;display:flex;align-items:center;gap:12px}
+header a{color:white;text-decoration:none;font-size:20px;line-height:1}
+header h1{font-size:17px;font-weight:600}
+header .grade-badge{margin-left:auto;background:rgba(255,255,255,.2);padding:4px 12px;border-radius:20px;font-size:13px}
+
+/* 투표자 입력 */
+.voter-box{background:white;margin:16px;border-radius:12px;padding:16px;border:1px solid #e0e8f0}
+.voter-box h2{font-size:14px;font-weight:600;color:#333;margin-bottom:12px}
+.form-row{display:flex;gap:8px}
+.form-row select,.form-row input{flex:1;padding:9px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;min-width:0}
+.form-row input{flex:2}
+.status-msg{margin-top:10px;padding:9px 12px;border-radius:8px;font-size:13px;display:none}
+.status-ok{background:#e8f5e9;color:#2e7d32;display:block}
+.status-err{background:#ffebee;color:#c62828;display:block}
+
+/* 갤러리 */
+.gallery-wrap{padding:0 16px 100px}
+.gallery-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.gallery-info span{font-size:13px;color:#666}
+.selected-badge{color:#2c5f8a;font-weight:600}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.card{background:white;border-radius:10px;overflow:hidden;border:2px solid #e0e8f0;cursor:pointer;transition:all .15s}
+.card:hover{border-color:#2c5f8a;transform:translateY(-2px)}
+.card.selected{border-color:#2c5f8a;box-shadow:0 0 0 3px rgba(44,95,138,.15)}
+.card-img{width:100%;height:120px;object-fit:cover;display:block;background:#f5f5f5}
+.card-footer{padding:7px 10px;display:flex;justify-content:space-between;align-items:center}
+.card-footer .no{font-size:12px;font-weight:600;color:#555}
+.card.selected .card-footer{background:#2c5f8a}
+.card.selected .card-footer .no{color:white}
+.check{width:18px;height:18px;border-radius:50%;border:2px solid #ccc;font-size:10px;display:flex;align-items:center;justify-content:center;color:transparent}
+.card.selected .check{background:white;border-color:white;color:#2c5f8a;font-weight:700}
+
+/* 라이트박스 */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.lightbox.open{display:flex}
+.lightbox img{max-width:100%;max-height:90vh;border-radius:8px;object-fit:contain}
+.lb-close{position:fixed;top:16px;right:20px;color:white;font-size:28px;cursor:pointer;line-height:1;z-index:101}
+.lb-num{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);color:white;font-size:14px;background:rgba(0,0,0,.5);padding:6px 16px;border-radius:20px}
+.lb-prev,.lb-next{position:fixed;top:50%;transform:translateY(-50%);color:white;font-size:32px;cursor:pointer;background:rgba(0,0,0,.3);padding:8px 14px;border-radius:8px;user-select:none}
+.lb-prev{left:10px}.lb-next{right:10px}
+
+/* 제출바 */
+.submit-bar{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #e0e8f0;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+.submit-bar .hint{font-size:13px;color:#888}
+.btn-submit{background:#2c5f8a;color:white;border:none;padding:11px 28px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer}
+.btn-submit:disabled{background:#ccc;cursor:not-allowed}
+
+/* 완료 */
+.done{display:none;text-align:center;padding:60px 20px}
+.done.show{display:block}
+.done-icon{font-size:56px;margin-bottom:16px}
+.done h2{font-size:20px;font-weight:600;color:#333;margin-bottom:8px}
+.done p{font-size:14px;color:#666;line-height:1.7}
+.done a{display:inline-block;margin-top:20px;padding:10px 24px;background:#2c5f8a;color:white;border-radius:8px;text-decoration:none;font-size:14px}
+
+/* 토스트 */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:10px 20px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;z-index:200}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html">←</a>
+  <h1>공모전 투표</h1>
+  <span class="grade-badge" id="gradeBadge">?학년</span>
+</header>
+
+<div id="mainArea">
+  <div class="voter-box">
+    <h2>투표자 정보를 입력해주세요</h2>
+    <div class="form-row">
+      <select id="classNum">
+        <option value="">반 선택</option>
+        <option>1반</option><option>2반</option><option>3반</option>
+        <option>4반</option><option>5반</option><option>6반</option>
+        <option>해당없음</option>
+      </select>
+      <input type="text" id="voterName" placeholder="이름 입력" maxlength="10">
+    </div>
+    <div class="status-msg" id="statusMsg"></div>
+  </div>
+
+  <div class="gallery-wrap">
+    <div class="gallery-info">
+      <span>출품작 <strong id="totalCount">36</strong>개</span>
+      <span class="selected-badge" id="selLabel"></span>
+    </div>
+    <div class="gallery" id="gallery"></div>
+  </div>
+
+  <div class="submit-bar">
+    <span class="hint" id="hint">반과 이름을 입력하고 작품을 선택하세요</span>
+    <button class="btn-submit" id="btnSubmit" disabled onclick="submitVote()">투표 제출</button>
+  </div>
+</div>
+
+<div class="done" id="doneArea">
+  <div class="done-icon">🎉</div>
+  <h2>투표 완료!</h2>
+  <p id="doneMsg"></p>
+  <a href="index.html">처음으로</a>
+</div>
+
+<!-- 라이트박스 -->
+<div class="lightbox" id="lb" onclick="closeLB(event)">
+  <span class="lb-close" onclick="closeLB()">✕</span>
+  <span class="lb-prev" onclick="lbMove(-1);event.stopPropagation()">‹</span>
+  <img id="lbImg" src="" alt="">
+  <span class="lb-next" onclick="lbMove(1);event.stopPropagation()">›</span>
+  <span class="lb-num" id="lbNum"></span>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ★ 여기에 Apps Script 웹앱 URL을 입력하세요
+const API_URL = 'https://script.google.com/macros/s/AKfycbxNr4nN2IIa4eBJJtSEYoFC81mHLT9MtPg_IV7j_E3AMRjrVQVWYKQ65ERUl1jt1xjj/exec';
+
+const FILES = [
+  '로고 공모전 (1).jpeg','로고 공모전 (1).jpg','로고 공모전 (1).png',
+  '로고 공모전 (2).jpeg','로고 공모전 (2).jpg','로고 공모전 (2).png',
+  '로고 공모전 (3).jpg','로고 공모전 (3).png',
+  '로고 공모전 (4).jpg','로고 공모전 (4).png',
+  '로고 공모전 (5).jpg','로고 공모전 (5).png',
+  '로고 공모전 (6).png','로고 공모전 (7).png','로고 공모전 (8).png',
+  '로고 공모전 (9).png','로고 공모전 (10).png','로고 공모전 (11).png',
+  '로고 공모전 (12).png','로고 공모전 (13).png','로고 공모전 (14).png',
+  '로고 공모전 (15).png','로고 공모전 (16).png','로고 공모전 (17).png',
+  '로고 공모전 (18).png','로고 공모전 (19).png','로고 공모전 (20).png',
+  '로고 공모전 (21).png','로고 공모전 (22).png','로고 공모전 (23).png',
+  '로고 공모전 (24).png','로고 공모전 (25).png','로고 공모전 (26).png',
+  '로고 공모전 (27).png','로고 공모전 (28).png','로고 공모전 (29).png'
+];
+const TOTAL = FILES.length;
+const params = new URLSearchParams(location.search);
+const grade = params.get('grade') || '1';
+document.getElementById('gradeBadge').textContent = grade + '학년';
+document.title = grade + '학년 공모전 투표';
+
+let selected = null;
+let lbIdx = 0;
+
+// 갤러리 렌더
+function renderGallery() {
+  const g = document.getElementById('gallery');
+  g.innerHTML = FILES.map((fname, i) => `
+    <div class="card ${selected===i?'selected':''}" id="c${i}">
+      <img class="card-img" src="images/${encodeURIComponent(fname)}"
+           alt="출품작 ${i+1}"
+           onclick="openLB(${i});event.stopPropagation()"
+           onerror="this.style.background='#eee'">
+      <div class="card-footer" onclick="selectCard(${i})">
+        <span class="no">No.${String(i+1).padStart(2,'0')}</span>
+        <div class="check">${selected===i?'✓':''}</div>
+      </div>
+    </div>`).join('');
+}
+
+function selectCard(i) {
+  selected = i;
+  renderGallery();
+  document.getElementById('selLabel').textContent = `선택: No.${String(i+1).padStart(2,'0')}`;
+  checkReady();
+}
+
+// 라이트박스
+function openLB(i) {
+  lbIdx = i;
+  updateLB();
+  document.getElementById('lb').classList.add('open');
+}
+function updateLB() {
+  document.getElementById('lbImg').src = `images/${encodeURIComponent(FILES[lbIdx])}`;
+  document.getElementById('lbNum').textContent = `No.${String(lbIdx+1).padStart(2,'0')} / ${TOTAL}`;
+}
+function lbMove(d) {
+  lbIdx = (lbIdx + d + TOTAL) % TOTAL;
+  updateLB();
+}
+function closeLB(e) {
+  if(!e || e.target===document.getElementById('lb') || e.target.classList.contains('lb-close'))
+    document.getElementById('lb').classList.remove('open');
+}
+document.addEventListener('keydown', e => {
+  if(!document.getElementById('lb').classList.contains('open')) return;
+  if(e.key==='ArrowLeft') lbMove(-1);
+  if(e.key==='ArrowRight') lbMove(1);
+  if(e.key==='Escape') document.getElementById('lb').classList.remove('open');
+});
+
+// 입력 감지
+let checkTimer;
+function onInput() {
+  clearTimeout(checkTimer);
+  checkTimer = setTimeout(checkDuplicate, 600);
+  checkReady();
+}
+document.getElementById('classNum').addEventListener('change', onInput);
+document.getElementById('voterName').addEventListener('input', onInput);
+
+function getInfo() {
+  return {
+    grade: grade + '학년',
+    classNum: document.getElementById('classNum').value,
+    name: document.getElementById('voterName').value.trim()
+  };
+}
+
+async function checkDuplicate() {
+  const {grade:g, classNum:c, name:n} = getInfo();
+  if(!c || !n) return;
+  const st = document.getElementById('statusMsg');
+  try {
+    const r = await api({action:'check', grade:g, classNum:c, name:n});
+    if(r.exists) {
+      st.className='status-msg status-err';
+      st.textContent=`⚠️ 이미 투표하셨습니다. (No.${r.work} 선택)`;
+    } else {
+      st.className='status-msg status-ok';
+      st.textContent='✅ 투표 가능합니다';
+    }
+    st.style.display='block';
+  } catch(e) { st.style.display='none'; }
+}
+
+function checkReady() {
+  const {classNum:c, name:n} = getInfo();
+  const ok = c && n && selected !== null;
+  document.getElementById('btnSubmit').disabled = !ok;
+  document.getElementById('hint').textContent = ok
+    ? '아래 버튼을 눌러 투표를 제출하세요'
+    : '반과 이름을 입력하고 작품을 선택하세요';
+}
+
+async function submitVote() {
+  const {grade:g, classNum:c, name:n} = getInfo();
+  if(!c || !n || selected===null) return;
+  document.getElementById('btnSubmit').disabled = true;
+  document.getElementById('btnSubmit').textContent = '제출 중...';
+  try {
+    const workLabel = `No.${String(selected+1).padStart(2,'0')}`;
+    const r = await api({action:'vote', grade:g, classNum:c, name:n, work:workLabel});
+    if(r.success) {
+      document.getElementById('mainArea').style.display='none';
+      const done = document.getElementById('doneArea');
+      done.classList.add('show');
+      document.getElementById('doneMsg').textContent =
+        `${g} ${c} ${n}님의\n${workLabel} 선택이 접수되었습니다.`;
+    } else {
+      showToast(r.msg || '오류가 발생했습니다');
+      document.getElementById('btnSubmit').disabled = false;
+      document.getElementById('btnSubmit').textContent = '투표 제출';
+    }
+  } catch(e) {
+    showToast('서버 연결 오류. 다시 시도해주세요.');
+    document.getElementById('btnSubmit').disabled = false;
+    document.getElementById('btnSubmit').textContent = '투표 제출';
+  }
+}
+
+async function api(body) {
+  const r = await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+renderGallery();
+</script>
+</body>
+</html>
